@@ -31,10 +31,54 @@ const Page = () => {
   const auth = useAuth();
   const [show, setShow] = useState(false);
   const [method, setMethod] = useState('email');
+
+  const handleSubmit = async (values, helpers) => {
+    setShow(true);
+  
+    try {
+      let url = '';
+      if (method === 'email') {
+        url = `${API_URL}api/login/`;
+      } else if (method === 'phoneNumber') {
+        url = `${API_URL}api/login2/`; // Cambia la ruta según tu necesidad
+      }
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: values.email,
+          password: values.password,
+        }),
+      });
+  
+      if (response.ok) {
+        const userData = await response.json(); // Obtiene los datos del usuario
+        localStorage.setItem('userData', JSON.stringify(userData.user));
+        auth.skip();
+        router.push('/');
+      } else {
+        // Manejo de errores
+        const errorData = await response.json();
+        helpers.setStatus({ success: false });
+        helpers.setErrors({ submit: errorData.detail });
+        console.log(errorData.message);
+        helpers.setSubmitting(false);
+      }
+    } catch (err) {
+      // Manejo de errores
+      console.error('Error en la solicitud POST:', err);
+      helpers.setStatus({ success: false });
+      helpers.setErrors({ submit: err.message });
+      helpers.setSubmitting(false);
+    }
+  };
   const formik = useFormik({
     initialValues: {
-      email: 'test5@emia2.com',
-      password: 'contraseña123',
+      email: '',
+      password: '',
       submit: null
     },
     validationSchema: Yup.object({
@@ -48,49 +92,10 @@ const Page = () => {
         .max(255)
         .required('Password is required')
     }),
-    onSubmit: async (values, helpers) => {
-      setShow(true)
-      
-      try {
-        const response = await fetch(`${API_URL}api/login/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: values.email,
-            password: values.password,
-          }),
-        });
-    
-        if (response.ok) {
-          
-          const userData = await response.json(); // Obtiene los datos del usuario
-           // Extrae el nombre y el email del objeto
-           console.log("Hola",userData.user)
-          localStorage.setItem('userData', JSON.stringify(userData.user));
-          auth.skip();
-          router.push('/');
-
-         
-        } else {
-          // Si la respuesta del servidor no es exitosa, maneja el error
-          const errorData = await response.json();
-          helpers.setStatus({ success: false });
-          helpers.setErrors({ submit: errorData.detail });
-          console.log(errorData.message)
-          helpers.setSubmitting(false);
-        }
-      } catch (err) {
-        // Si hay un error en la solicitud, maneja el error
-        console.error('Error en la solicitud POST:', err);
-        helpers.setStatus({ success: false });
-        helpers.setErrors({ submit: err.message });
-        helpers.setSubmitting(false);
-      }
-    }
+    onSubmit: handleSubmit
   });
-  
+    
+
   const handleMethodChange = useCallback(
     (event, value) => {
       setMethod(value);
@@ -156,11 +161,11 @@ const Page = () => {
               value={method}
             >
               <Tab
-                label="Email"
+                label="Administrador"
                 value="email"
               />
               <Tab
-                label="Phone Number"
+                label="Externo"
                 value="phoneNumber"
               />
             </Tabs>
@@ -230,15 +235,67 @@ const Page = () => {
             )}
             {method === 'phoneNumber' && (
               <div>
-                <Typography
-                  sx={{ mb: 1 }}
-                  variant="h6"
+              <form
+                noValidate
+                onSubmit={formik.handleSubmit}
+              >      
+                <Stack spacing={3}>
+                  <TextField
+                    error={!!(formik.touched.email && formik.errors.email)}
+                    fullWidth
+                    helperText={formik.touched.email && formik.errors.email}
+                    label="Email Address"
+                    name="email"
+                    onBlur={formik.handleBlur}
+                    onChange={formik.handleChange}
+                    type="email"
+                    value={formik.values.email}
+                  />
+                  <TextField
+                    error={!!(formik.touched.password && formik.errors.password)}
+                    fullWidth
+                    helperText={formik.touched.password && formik.errors.password}
+                    label="Password"
+                    name="password"
+                    onBlur={formik.handleBlur}
+                    onChange={formik.handleChange}
+                    type="password"
+                    value={formik.values.password}
+                  />
+                 {show ? (
+                  <Box sx={{ width: '100%' }}>
+                    <LinearProgress />
+                  </Box>
+                 ) : null}
+                </Stack>
+                <FormHelperText sx={{ mt: 1 }}>
+                  Optionally you can skip.
+                </FormHelperText>
+                {formik.errors.submit && (
+                  <Typography
+                    color="error"
+                    sx={{ mt: 3 }}
+                    variant="body2"
+                  >
+                    {formik.errors.submit}
+                  </Typography>
+                )}
+                <Button
+                  fullWidth
+                  size="large"
+                  sx={{ mt: 3 }}
+                  type="submit"
+                  variant="contained"
                 >
-                  Not available in the demo
-                </Typography>
-                <Typography color="text.secondary">
-                  To prevent unnecessary costs we disabled this feature in the demo.
-                </Typography>
+                  Continuar
+                </Button>
+              
+                <AccountPopover   
+                anchorEl={accountPopover.anchorRef.current}
+                open={accountPopover.open}
+                onClose={accountPopover.handleClose}
+                name='userData1.name' email={userData1.email} />
+              </form>
               </div>
             )}
           </div>
