@@ -8,7 +8,7 @@ import { Box, Button, Card, Container, Stack, SvgIcon, Typography } from '@mui/m
 import { useSelection } from 'src/hooks/use-selection';
 import { Layout as DashboardLayout } from 'src/layouts/dashboard/layout';
 import { CustomersTable } from 'src/sections/customer/customers-table';
-import { ProductsTable} from 'src/sections/inventary/table-inventary';
+import  Example  from 'src/sections/inventary/table-inventary';
 import { CustomersSearch } from 'src/sections/customer/customers-search';
 import { applyPagination } from 'src/utils/apply-pagination';
 
@@ -90,7 +90,7 @@ const Page = () => {
           py: 8
         }}
       >
-      
+       <Example/>
       </Box>
     </>
   );

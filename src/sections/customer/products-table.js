@@ -71,9 +71,14 @@ export const ProductsTable = (props) => {
   },[])
 
   const handleDelete = (id) => {
-    // Realizar la solicitud HTTP para eliminar un producto por su ID
+    
+    const storedUserData = JSON.parse(localStorage.getItem('userData'));
     fetch(`${API_URL}api/products/${id}/`, {
       method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Token '+storedUserData.token
+      },
     })
       .then(() => {
         // Actualizar la lista de productos después de la eliminación

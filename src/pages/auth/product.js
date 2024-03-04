@@ -3,20 +3,32 @@ import { useRouter } from 'next/navigation';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { Box, Button, Link, Stack, TextField, Typography } from '@mui/material';
-import { useAuth } from 'src/hooks/use-auth';
-import { Layout as AuthLayout } from 'src/layouts/auth/layout';
 import React, { useEffect, useState } from 'react';
+import { Layout as AuthLayout } from 'src/layouts/auth/layout';
+import { FormHelperText } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
-import Head from 'next/head';
-
+import SaveIcon from '@mui/icons-material/Save';
 import {API_URL} from '../../utils/constants'
+import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 
-const Page = () => {
-  const [filea, setFilea] = React.useState(null);
+const Edit = ({product}) => {
+  
+
+  const [filea, setFilea] = React.useState('');
+  const handleFileChange = (event) => {
+    setFilea(event.target.files[0]);
+    if (filea) {
+      
+      console.log("Archivo seleccionado:", filea.name);
+     
+    }
+  };
+  
+
   const [selectedCategories, setSelectedCategories] = useState([]); 
   const [categorias, setCategorias] = useState([]);
 
@@ -42,94 +54,42 @@ const Page = () => {
 
 },[])
 
-  const handleFileChange = async (event) => {
-    const selectedFile = event.target.files[0];
-  
-
-    if (selectedFile) {
-      setFilea(selectedFile); 
-      const url = `https://api.cloudinary.com/v1_1/ddsuzqzgh/image/upload`;
-      
-      try {
-        const formData = new FormData();
-        formData.append("file", selectedFile);
-        formData.append('upload_preset', 'v8xxvhbs');
-        
-        const response = await fetch(url, {
-          method: 'POST',
-          body: formData
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Datos de la imagen: ', data);
-          formik.setFieldValue('secure_url', data.secure_url);
-          formik.setFieldValue('public_id', data.public_id);
-
-        } else {
-          console.error('Error al subir la imagen a Cloudinary.');
-        }
-      } catch (error) {
-        console.error('Error en la solicitud a Cloudinary:', error);
-      }
-      
-      
-    }
-  };
-  
-  
-  const router = useRouter();
-  const auth = useAuth();
-  const [estado, setEstado] = React.useState('');
-  const [categoria, setCategoria] = React.useState('');
-
-  const handleChange = (event) => {
- 
-    setEstado(event.target.value);
-    formik.setFieldValue('availability', event.target.value);
-    console.log("hola . " + event.target.value)
-  };
-  
-
-  const handleChange2 = (event) => {
-    setCategoria(event.target.value);
-    formik.setFieldValue('category', event.target.value);
-    console.log("hola . " + event.target.value)
-  };
- 
- 
 
   const formik = useFormik({
     initialValues: {
       codigo: '',
       nombre: '',
       caracteristicas: '',
-      precio: '',
+      precio: 0,
       moneda: '',
+      categorias: selectedCategories,
     },
     validationSchema: Yup.object({
       codigo: Yup.string().required('El código es requerido'),
       nombre: Yup.string().required('El nombre es requerido'),
       caracteristicas: Yup.string().required('Las características son requeridas'),
-      precio: Yup.number().required('El precio es requerido').positive('El precio debe ser positivo'),
-      moneda: Yup.string().required('La moneda es requerida'),
+      precio: Yup.number().required('El precio es requerido').positive('El precio debe ser positivo')
     }),
     onSubmit: async (values, helpers) => {
+       
+      const jsonData = JSON.stringify(values);
+      console.log('categorias',values.categorias);
+      const storedUserData = JSON.parse(localStorage.getItem('userData'));
       try {
-        const jsonData = JSON.stringify(values);
-      
-        const response = await fetch(`${API_URL}/products/`, {
+        const response = await fetch(`${API_URL}api/products/`, {
           method: 'POST',
           body: jsonData,
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': 'Token '+storedUserData.token
           },
         });
     
         if (response.ok) {
+          
           console.log('Solicitud POST exitosa');
           helpers.setStatus({ success: false });
-          helpers.setErrors({ submit: "Producto agregado" });
+          helpers.setErrors({ submit: "Producto Agregado"});
           helpers.setSubmitting(false);
         } else {
           // Manejar errores en caso de una respuesta no exitosa
@@ -150,42 +110,35 @@ const Page = () => {
     
   });
   
-  const VisuallyHiddenInput = styled('input')({
-    clip: 'rect(0 0 0 0)',
-    clipPath: 'inset(50%)',
-    height: 1,
-    overflow: 'hidden',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    whiteSpace: 'nowrap',
-    width: 1,
-  });
-  
 
+  
+  const [isBoxVisible, setIsBoxVisible] = useState(true);
+
+  const handleCloseBox = () => {
+    setIsBoxVisible(false);
+  };
   return (
     <>
-      <Head>
-        <title>
-          Register | UPTC Kit
-        </title>
-      </Head>
-      <Box
-        sx={{
-          flex: '1 1 auto',
-          alignItems: 'center',
-          display: 'flex',
-          justifyContent: 'center'
-        }}
-      >
-        <Box
-          sx={{
-            maxWidth: 550,
-            px: 3,
-            py: '100px',
-            width: '100%'
-          }}
-        >
+     {isBoxVisible && (
+  <Box
+  sx={{
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: '100vh', // Esto centra verticalmente en la pantalla
+    backgroundColor: 'background.paper',
+    boxShadow: 24,
+    p: 4,
+  }}
+>
+  <Box
+    sx={{
+      maxWidth: 550,
+      px: 3,
+      py: '100px',
+      width: '100%',
+    }}
+  >
           <div>
             <Stack
               spacing={1}
@@ -269,8 +222,8 @@ const Page = () => {
           <Select
             labelId="categorias-label"
             multiple
-            value={selectedCategories}
-            onChange={(e) => setSelectedCategories(e.target.value)}
+            value={formik.values.categorias} // Usar formik.values.categorias en lugar de selectedCategories
+            onChange={(e) => formik.setFieldValue('categorias', e.target.value)} // Actualizar el valor de categorias usando setFieldValue de formik
             onBlur={formik.handleBlur}
             name="categorias"
             error={formik.touched.categorias && Boolean(formik.errors.categorias)}
@@ -315,15 +268,17 @@ const Page = () => {
             </form>
           </div>
         </Box>
-      </Box>
+      </Box>            
+      )}
     </>
+   
   );
 };
 
-Page.getLayout = (page) => (
+Edit.getLayout = (edit) => (
   <AuthLayout>
-    {page}
+    {edit}
   </AuthLayout>
 );
 
-export default Page;
+export default Edit;

@@ -53,20 +53,7 @@ const Edit = ({product}) => {
 
 
 },[])
-  const handleChange = (event) => {
- 
-    setEstado(event.target.value);
-    formik.setFieldValue('availability', event.target.value);
-    console.log("hola . " + event.target.value)
-  };
-  
 
-  const handleChange2 = (event) => {
-    setCategoria(event.target.value);
-    formik.setFieldValue('category', event.target.value);
-    console.log("hola . " + event.target.value)
-  };
-  
 
   const formik = useFormik({
     initialValues: {
@@ -75,21 +62,21 @@ const Edit = ({product}) => {
       caracteristicas: product.caracteristicas,
       precio: product.precio,
       moneda: product.moneda,
-      categorias: [],
+      categorias: selectedCategories,
     },
     validationSchema: Yup.object({
       codigo: Yup.string().required('El código es requerido'),
       nombre: Yup.string().required('El nombre es requerido'),
       caracteristicas: Yup.string().required('Las características son requeridas'),
-      precio: Yup.number().required('El precio es requerido').positive('El precio debe ser positivo'),
-      categorias: Yup.array().min(1, 'Seleccione al menos una categoría'), 
+      precio: Yup.number().required('El precio es requerido').positive('El precio debe ser positivo')
     }),
     onSubmit: async (values, helpers) => {
-      
+       
       const jsonData = JSON.stringify(values);
+      console.log('categorias',values.categorias);
       const storedUserData = JSON.parse(localStorage.getItem('userData'));
       try {
-        const response = await fetch(`${API_URL}api/Empresas/${product.nit}/`, {
+        const response = await fetch(`${API_URL}api/products/${product.id}/`, {
           method: 'PUT',
           body: jsonData,
           headers: {
@@ -123,17 +110,7 @@ const Edit = ({product}) => {
     
   });
   
-  const VisuallyHiddenInput = styled('input')({
-    clip: 'rect(0 0 0 0)',
-    clipPath: 'inset(50%)',
-    height: 1,
-    overflow: 'hidden',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    whiteSpace: 'nowrap',
-    width: 1,
-  });
+
   
   const [isBoxVisible, setIsBoxVisible] = useState(true);
 
@@ -245,8 +222,8 @@ const Edit = ({product}) => {
           <Select
             labelId="categorias-label"
             multiple
-            value={selectedCategories}
-            onChange={(e) => setSelectedCategories(e.target.value)}
+            value={formik.values.categorias} // Usar formik.values.categorias en lugar de selectedCategories
+            onChange={(e) => formik.setFieldValue('categorias', e.target.value)} // Actualizar el valor de categorias usando setFieldValue de formik
             onBlur={formik.handleBlur}
             name="categorias"
             error={formik.touched.categorias && Boolean(formik.errors.categorias)}
